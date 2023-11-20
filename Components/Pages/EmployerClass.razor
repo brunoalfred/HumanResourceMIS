@@ -1,0 +1,81 @@
+﻿@page "/EmployerClass"
+@rendermode InteractiveServer
+@using Microsoft.Extensions.Configuration
+@using System.Data.SqlClient
+@using Dapper
+@inject IConfiguration Configuration
+
+<PageTitle>EmployerClass</PageTitle>
+
+<h1>EmployerClass</h1>
+
+<p>
+    This page demonstrates the use of the EmployerClass component.
+</p>
+
+
+@if (employerMajorClasses == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+    <thead>
+        <tr>
+            <th>EmployerClassID</th>
+            <th>EmployerClassRef</th>
+            <th>EmployerClassType</th>
+            <th>EmployerClassName</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var employerMajorClass in employerMajorClasses)
+            {
+                <tr>
+                    <td>@employerMajorClass.EmployerClassID</td>
+                    <td>@employerMajorClass.EmployerClassRef</td>
+                    <td>@employerMajorClass.EmployerClassType</td>
+                    <td>@employerMajorClass.EmployerClassName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+
+
+@code {
+
+    private EmployerMajorClass[]? employerMajorClasses;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadData();
+    }
+
+
+    private async Task LoadData()
+    {
+        var connectionString = Configuration.GetConnectionString("DefaultConnection");
+        var sql = "SELECT * FROM EmployerClasses";
+        using (var connection = new SqlConnection(connectionString))
+        {
+            employerMajorClasses = (await connection.QueryAsync<EmployerMajorClass>(sql)).ToArray();
+        }
+    }
+
+
+
+    private class EmployerMajorClass
+    {
+        public int EmployerClassID { get; set; }
+        public string? EmployerClassRef { get; set; }
+        public string? EmployerClassType { get; set; }
+        public string? EmployerClassName { get; set; }
+    }
+
+
+}

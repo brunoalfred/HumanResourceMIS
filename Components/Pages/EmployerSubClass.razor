@@ -1,0 +1,80 @@
+@page "/EmployerSubClass"
+@attribute [StreamRendering]
+@using Microsoft.Extensions.Configuration
+@using System.Data.SqlClient
+@using Dapper
+@inject IConfiguration Configuration
+
+<PageTitle>EmployerSubClass</PageTitle>
+
+<h1>EmployerSubClass</h1>
+
+<p>List of Employer Subclasses</p>
+
+
+@if (employerSubClasses == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+    <thead>
+        <tr>
+            <th>EmployerSubClassCode</th>
+            <th>EmployerSubClassDescription</th>
+            <th>EmployerSubClassShortDescription</th>
+            <th>ClassRef</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var employerSubClass in employerSubClasses)
+            {
+                <tr>
+                    <td>@employerSubClass.EmployerSubClassCode</td>
+                    <td>@employerSubClass.EmployerSubClassDescription</td>
+                    <td>@employerSubClass.EmployerSubClassShortDescription</td>
+                    <td>@employerSubClass.ClassRef</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+
+
+@code {
+
+    private EmployerSubClasses[]? employerSubClasses;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadData();
+    }
+
+    
+    private async Task LoadData()
+    {
+        var connectionString = Configuration.GetConnectionString("DefaultConnection");
+        var sql = "SELECT * FROM EmployerSubClasses";
+        Console.WriteLine(connectionString);
+        using (var connection = new SqlConnection(connectionString))
+        {
+            employerSubClasses = (await connection.QueryAsync<EmployerSubClasses>(sql)).ToArray();
+        }
+    }
+
+
+
+    private class EmployerSubClasses
+    {
+        public int EmployerSubClassID { get; set; }
+        public string? EmployerSubClassCode { get; set; }
+        public string? EmployerSubClassDescription { get; set; }
+        public string? EmployerSubClassShortDescription { get; set; }
+        public int ClassRef { get; set; }
+    }
+
+}

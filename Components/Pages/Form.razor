@@ -1,0 +1,144 @@
+@page "/Form"
+@rendermode InteractiveServer
+@using Microsoft.Extensions.Configuration
+@using System.Data.SqlClient
+@using Dapper
+@inject IConfiguration Configuration
+
+<PageTitle>Form</PageTitle>
+
+<h1>Form viewer</h1>
+
+<p>
+    To visualize data
+</p>
+
+<form action="" method="post">
+
+
+    <div>
+        @if (SelectedEmployerClassId != 0)
+        {
+            <div> Selected Employer Class: @GetEmployerClassName(SelectedEmployerClassId.ToString())</div>
+        }
+
+
+        <select @onchange="SelectedEmployerClassChanged" name="employerClass" id="employerClassId">
+            @if (employerMajorClasses == null)
+            {
+                <option value="">Loading...</option>
+            }
+            else
+            {
+                <option value="">Select a class</option>
+                @foreach (var employerMajorClass in employerMajorClasses)
+                {
+                    <option value="@employerMajorClass.EmployerClassID">@employerMajorClass.EmployerClassName</option>
+                }
+            }
+
+        </select>
+
+        <br>
+
+        <select style="margin-top: 40px;" name="employerSubClass" id="employerSubClass">
+            @if (employerSubClasses == null)
+            {
+                <option value="">Loading...</option>
+            }
+            else
+            {
+                <option value="">Select a sub class</option>
+                @foreach (var employerSubClass in employerSubClasses)
+                {
+                    <option value="@employerSubClass.EmployerSubClassID">@employerSubClass.EmployerSubClassShortDescription
+                    </option>
+                }
+            }
+        </select>
+    </div>
+
+
+
+
+</form>
+
+
+
+
+@code {
+
+    private EmployerMajorClass[]? employerMajorClasses;
+
+    private EmployerSubClasses[]? employerSubClasses;
+
+    public int SelectedEmployerClassId { get; set; } = 0;
+
+
+    private async void SelectedEmployerClassChanged(ChangeEventArgs e)
+    {
+        if (e.Value is not null)
+        {
+            SelectedEmployerClassId = int.Parse(e.Value.ToString());
+        }
+
+        await LoadEmployerSubClassData();
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadEmployerClassData();
+
+    }
+
+
+    private async Task LoadEmployerClassData()
+    {
+        var connectionString = Configuration.GetConnectionString("DefaultConnection");
+        var sql = "SELECT * FROM EmployerClasses";
+        using (var connection = new SqlConnection(connectionString))
+        {
+            employerMajorClasses = (await connection.QueryAsync<EmployerMajorClass>(sql)).ToArray();
+        }
+    }
+
+    private async Task LoadEmployerSubClassData()
+    {
+        var connectionString = Configuration.GetConnectionString("DefaultConnection");
+        var sql = "SELECT * FROM EmployerSubClasses WHERE ClassRef = @ClassRef";
+        using (var connection = new SqlConnection(connectionString))
+        {
+            employerSubClasses = (await connection.QueryAsync<EmployerSubClasses>(sql, new
+            {
+                ClassRef = SelectedEmployerClassId
+            })).ToArray();
+        }
+    }
+
+    private string GetEmployerClassName(string EmployerClassID)
+    {
+        return employerMajorClasses?.FirstOrDefault(x => x.EmployerClassID == int.Parse(EmployerClassID))?.EmployerClassName ??
+        "";
+    }
+
+
+
+    private class EmployerMajorClass
+    {
+        public int EmployerClassID { get; set; }
+        public string? EmployerClassRef { get; set; }
+        public string? EmployerClassType { get; set; }
+        public string? EmployerClassName { get; set; }
+    }
+
+    private class EmployerSubClasses
+    {
+        public int EmployerSubClassID { get; set; }
+        public string? EmployerSubClassCode { get; set; }
+        public string? EmployerSubClassDescription { get; set; }
+        public string? EmployerSubClassShortDescription { get; set; }
+        public int ClassRef { get; set; }
+    }
+
+}
